@@ -589,6 +589,18 @@ function FindClients(id)
     return result
 end
 
+
+function FindClientsStrict(id)
+    if type(id) ~= 'number' then return {} end
+    local nick = GetArmyData(id).nickname
+    for idx, client in GetSessionClients() do
+        if client.name == nick then
+            return { idx }
+        end
+    end
+    return {}
+end
+
 local RunChatCommand = import("/lua/ui/notify/commands.lua").RunChatCommand
 function CreateChatEdit()
     local parent = GUI.bg:GetClientGroup()
@@ -791,7 +803,7 @@ function CreateChatEdit()
                 end
             elseif type(ChatTo()) == 'number' then
                 if GetFocusArmy() ~= -1 then
-                    SessionSendChatMessage(FindClients(ChatTo()), msg)
+                    SessionSendChatMessage(FindClientsStrict(ChatTo()), msg)
                     msg.echo = true
                     msg.from = GetArmyData(GetFocusArmy()).nickname
                     ReceiveChat(GetArmyData(ChatTo()).nickname, msg)
