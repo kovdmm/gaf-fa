@@ -22,7 +22,7 @@ XRL0305 = ClassUnit(CWalkingLandUnit)
             FxMuzzleFlash = {'/effects/emitters/particle_cannon_muzzle_02_emit.bp'},
         },
         Disintigrator = ClassWeapon(CDFHeavyDisintegratorWeapon) {
-            DisabledFiringBones = { 'Torso' },
+            DisabledFiringBones = { 'Turret' },
         },
         Torpedo = ClassWeapon(CANNaniteTorpedoWeapon) {},
         AntiTorpedo = ClassWeapon(CIFSmartCharge) {},
