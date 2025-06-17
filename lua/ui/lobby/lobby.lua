@@ -1151,6 +1151,8 @@ function SetSlotInfo(slotNum, playerInfo)
     if not playerInfo.Human then
         slot.ratingText:Hide()
         slotState = 'ai'
+    elseif isLocallyOwned then
+        slotState = nil
     elseif groupDevColors[playerInfo.GroupRole] then
         slotState = 'groupdev'
     else
@@ -3426,8 +3428,8 @@ function CreateUI(maxPlayers)
         HostUtils.KickObservers("GameLaunched")
     end
 
-    -- Patchnotes Button
-    GUI.patchnotesButton = UIUtil.CreateButtonWithDropshadow(GUI.panel, '/Button/medium/', "<LOC _Patchnotes>Discord GAF")
+    -- Discord GAF
+    GUI.patchnotesButton = UIUtil.CreateButtonWithDropshadow(GUI.panel, '/Button/medium/', "<LOC _DiscordGaf>Discord GAF")
     Tooltip.AddButtonTooltip(GUI.patchnotesButton, {text=LOC("Discord GAF"), body=LOC("Официальный дискорд GAPForever")})
     LayoutHelpers.AtBottomIn(GUI.patchnotesButton, GUI.optionsPanel, -51)
     LayoutHelpers.AtHorizontalCenterIn(GUI.patchnotesButton, GUI.optionsPanel, -55)
