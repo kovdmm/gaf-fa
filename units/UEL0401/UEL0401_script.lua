@@ -11,10 +11,13 @@ local TDFGaussCannonWeapon = WeaponsFile.TDFLandGaussCannonWeapon
 local TDFRiotWeapon = WeaponsFile.TDFRiotWeapon
 local TAALinkedRailgun = WeaponsFile.TAALinkedRailgun
 local TANTorpedoAngler = WeaponsFile.TANTorpedoAngler
+local TAAFlakArtilleryCannon = import("/lua/terranweapons.lua").TAAFlakArtilleryCannon
 local EffectTemplate = import("/lua/effecttemplates.lua")
 local EffectUtil = import("/lua/effectutilities.lua")
 
+local TShieldLandUnit = import("/lua/terranunits.lua").TShieldLandUnit
 local ExternalFactoryComponent = import("/lua/defaultcomponents.lua").ExternalFactoryComponent
+local ShieldEffectsComponent = import("/lua/defaultcomponents.lua").ShieldEffectsComponent
 local DefaultExplosions = import("/lua/defaultexplosions.lua")
 
 local IsDestroyed = IsDestroyed
@@ -23,26 +26,34 @@ local IsDestroyed = IsDestroyed
 ---@field UnitBeingBuilt Unit | nil
 ---@field AttachmentSliderManip moho.SlideManipulator
 ---@field PrepareToBuildManipulator moho.AnimationManipulator
-UEL0401 = ClassUnit(TMobileFactoryUnit, ExternalFactoryComponent) {
+UEL0401 = ClassUnit(TMobileFactoryUnit, ExternalFactoryComponent, TShieldLandUnit, ShieldEffectsComponent) {
     PrepareToBuildAnimRate = 5,
     BuildAttachBone = 'Build_Attachpoint',
     FactoryAttachBone = 'ExternalFactoryPoint',
     RollOffBones = { 'Arm_Right03_Build_Emitter', 'Arm_Left03_Build_Emitter', },
 
+	ShieldEffectsBone = 'Spinner',
+    ShieldEffects = {
+        '/effects/emitters/terran_shield_generator_mobile_01_emit.bp',
+        '/effects/emitters/terran_shield_generator_mobile_02_emit.bp',
+    },
+
     ExplosionBones = {
         'Turret_Right01',
-        'Turret_Right02',
+        '1Turret_Right02',
         'Turret_Left01',
-        'Turret_Left02',
+        '1Turret_Left02',
         'Wheel_Right01',
         'Wheel_Right02',
         'Wheel_Left01',
-        'Wheel_Left02',
-        'Turret_Left_AA',
-        'Turret_Right_AA',
-        'Attachpoint01',
-        'Attachpoint02',
-        'Attachpoint03',
+        '1Wheel_Left02',
+        'AA_Turret_Left',
+        'AA_Turret_Right',
+        'Flak_Turret_Left',
+        'Flak_Turret_Right',
+        'Attachpoint_field01',
+        'Attachpoint_field02',
+        'Attachpoint_field03',
         'Bay_Cover',
     },
 
@@ -51,20 +62,36 @@ UEL0401 = ClassUnit(TMobileFactoryUnit, ExternalFactoryComponent) {
         RightTurret02 = ClassWeapon(TDFGaussCannonWeapon) {},
         LeftTurret01 = ClassWeapon(TDFGaussCannonWeapon) {},
         LeftTurret02 = ClassWeapon(TDFGaussCannonWeapon) {},
-        RightRiotgun = ClassWeapon(TDFRiotWeapon) {
+        RiotgunRight01 = ClassWeapon(TDFRiotWeapon) {
             FxMuzzleFlash = EffectTemplate.TRiotGunMuzzleFxTank
         },
-        LeftRiotgun = ClassWeapon(TDFRiotWeapon) {
+        RiotgunRight02 = ClassWeapon(TDFRiotWeapon) {
+            FxMuzzleFlash = EffectTemplate.TRiotGunMuzzleFxTank
+        },
+        RiotgunRight03 = ClassWeapon(TDFRiotWeapon) {
+            FxMuzzleFlash = EffectTemplate.TRiotGunMuzzleFxTank
+        },
+        RiotgunLeft01 = ClassWeapon(TDFRiotWeapon) {
+            FxMuzzleFlash = EffectTemplate.TRiotGunMuzzleFxTank
+        },
+        RiotgunLeft02 = ClassWeapon(TDFRiotWeapon) {
+            FxMuzzleFlash = EffectTemplate.TRiotGunMuzzleFxTank
+        },
+        RiotgunLeft03 = ClassWeapon(TDFRiotWeapon) {
             FxMuzzleFlash = EffectTemplate.TRiotGunMuzzleFxTank
         },
         RightAAGun = ClassWeapon(TAALinkedRailgun) {},
         LeftAAGun = ClassWeapon(TAALinkedRailgun) {},
         Torpedo = ClassWeapon(TANTorpedoAngler) {},
+        RighFlakGun = ClassWeapon(TAAFlakArtilleryCannon) {},
+        LeftFlakGun = ClassWeapon(TAAFlakArtilleryCannon) {},
     },
 
     ---@param self UEL0401
     OnCreate = function(self)
         TMobileFactoryUnit.OnCreate(self)
+		TShieldLandUnit.OnCreate(self)
+		ShieldEffectsComponent.OnCreate(self)
         local blueprint = self.Blueprint
         self.BuildEffectBones = blueprint.General.BuildBones.BuildEffectBones
         if blueprint.General.BuildBones then
@@ -80,6 +107,7 @@ UEL0401 = ClassUnit(TMobileFactoryUnit, ExternalFactoryComponent) {
     ---@param layer Layer
     OnStopBeingBuilt = function(self, builder, layer)
         TMobileFactoryUnit.OnStopBeingBuilt(self, builder, layer)
+		TShieldLandUnit.OnStopBeingBuilt(self, builder, layer)
         ExternalFactoryComponent.OnStopBeingBuilt(self, builder, layer)
         self.PrepareToBuildManipulator = CreateAnimator(self)
         self.PrepareToBuildManipulator:PlayAnim(self:GetBlueprint().Display.AnimationBuild, false):SetRate(0)
@@ -121,6 +149,7 @@ UEL0401 = ClassUnit(TMobileFactoryUnit, ExternalFactoryComponent) {
     ---@param old Layer
     OnLayerChange = function(self, new, old)
         TMobileFactoryUnit.OnLayerChange(self, new, old)
+		TShieldLandUnit.OnLayerChange(self, new, old)
         ExternalFactoryComponent.OnLayerChange(self, new, old)
         if self.ExternalFactory then
             if new == 'Land' then
@@ -369,6 +398,55 @@ UEL0401 = ClassUnit(TMobileFactoryUnit, ExternalFactoryComponent) {
 
         self:DestroyUnit(overkillRatio)
     end,
+	
+	OnShieldEnabled = function(self)
+		TShieldLandUnit.OnShieldEnabled(self)
+        TMobileFactoryUnit.OnShieldEnabled(self)
+        ShieldEffectsComponent.OnShieldEnabled(self)
+
+        KillThread(self.DestroyManipulatorsThread)
+        if not self.RotatorManipulator then
+            self.RotatorManipulator = CreateRotator(self, 'Spinner', 'y')
+            self.Trash:Add(self.RotatorManipulator)
+        end
+        self.RotatorManipulator:SetAccel(5)
+        self.RotatorManipulator:SetTargetSpeed(30)
+        if not self.AnimationManipulator then
+            local myBlueprint = self:GetBlueprint()
+            self.AnimationManipulator = CreateAnimator(self)
+            self.AnimationManipulator:PlayAnim(myBlueprint.Display.AnimationOpen)
+            self.Trash:Add(self.AnimationManipulator)
+        end
+        self.AnimationManipulator:SetRate(1)
+    end,
+	
+	OnShieldDisabled = function(self)
+		TShieldLandUnit.OnShieldDisabled(self)
+        TMobileFactoryUnit.OnShieldDisabled(self)
+        ShieldEffectsComponent.OnShieldDisabled(self)
+        KillThread(self.DestroyManipulatorsThread)
+        self.DestroyManipulatorsThread = self:ForkThread(self.DestroyManipulators)
+    end,
+	
+	DestroyManipulators = function(self)
+        if self.RotatorManipulator then
+            self.RotatorManipulator:SetAccel(10)
+            self.RotatorManipulator:SetTargetSpeed(0)
+            -- Unless it goes smoothly back to its original position,
+            -- it will snap there when the manipulator is destroyed.
+            -- So for now, we'll just keep it on.
+            --WaitFor( self.RotatorManipulator )
+            --self.RotatorManipulator:Destroy()
+            --self.RotatorManipulator = nil
+        end
+        if self.AnimationManipulator then
+            self.AnimationManipulator:SetRate(-1)
+            WaitFor(self.AnimationManipulator)
+            self.AnimationManipulator:Destroy()
+            self.AnimationManipulator = nil
+        end
+    end,
+	
 }
 
 TypeClass = UEL0401
